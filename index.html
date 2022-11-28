@@ -1,54 +1,83 @@
-<!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <meta charset="utf-8" />
-    <base href="./" />
-    <link rel="icon" href="./favicon.ico" />
-    <meta
-      name="viewport"
-      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0"
-    />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
-    <link rel="apple-touch-icon" href="./logo.png" />
-    <link rel="manifest" href="./manifest.json" />
-    <title>ZEGOCLOUD video call Demo(prebuilt)</title>
     <style>
-      @font-face {
-        font-family: Emoji;
-        src: local("Apple Color Emoji"), local("Segoe UI Emoji"),
-          local("Segoe UI Symbol"), local("Noto Color Emoji");
-      }
-      body,
-      html {
-        height: 100%;
-        margin: 0;
-        margin: 0;
-        font-family: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system,
-          "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans",
-          "Droid Sans", "Helvetica Neue", sans-serif, Arial, Emoji;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      }
-      code {
-        font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-          monospace;
-      }
       #root {
-        height: 100%;
+        width: 100vw;
+        height: 100vh;
       }
     </style>
-    <script defer="defer" src="./static/js/main.c5cf0ccf.js"></script>
-    <link href="./static/css/main.95bcc45a.css" rel="stylesheet" />
   </head>
+
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
   </body>
+  <script src="https://unpkg.com/@zegocloud/zego-uikit-prebuilt@beta/zego-uikit-prebuilt.js"></script>
   <script>
-    window.location.href = "./1on1_call/index.html";
+    window.onload = function () {
+      function getUrlParams(url) {
+        let urlStr = url.split("?")[1];
+        const urlSearchParams = new URLSearchParams(urlStr);
+        const result = Object.fromEntries(urlSearchParams.entries());
+        return result;
+      }
+
+      // Generate a Token by calling a method.
+      // @param 1: appID
+      // @param 2: serverSecret
+      // @param 3: Room ID
+      // @param 4: User ID
+      // @param 5: Username
+      const roomID =
+        getUrlParams(window.location.href)["roomID"] ||
+        Math.floor(Math.random() * 10000) + "";
+      const userID = Math.floor(Math.random() * 10000) + "";
+      const userName = "userName" + userID;
+      const appID = 252984006;
+      const serverSecret = "16435f3bdb307f3020b3f9e4259a29f0";
+      const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
+        appID,
+        serverSecret,
+        roomID,
+        userID,
+        userName
+      );
+
+      // You can assign different roles based on url parameters.
+      let role = getUrlParams(window.location.href)["role"] || "Host";
+      role = ZegoUIKitPrebuilt[role] || ZegoUIKitPrebuilt.Host;
+      let config = {};
+      if (role === "Host") {
+        config = {
+          turnOnCameraWhenJoining: true,
+          showMyCameraToggleButton: true,
+          showAudioVideoSettingsButton: true,
+          showScreenSharingButton: true,
+          showTextChat: true,
+          showUserList: true,
+        };
+      }
+      const zp = ZegoUIKitPrebuilt.create(kitToken);
+      zp.joinRoom({
+        container: document.querySelector("#root"),
+        scenario: {
+          mode: ZegoUIKitPrebuilt.LiveStreaming,
+          config: {
+            role,
+          },
+        },
+        sharedLinks: [
+          {
+            name: "Join as an audience",
+            url:
+              window.location.origin +
+              window.location.pathname +
+              "?roomID=" +
+              roomID +
+              "&role=Audience",
+          },
+        ],
+        ...config,
+      });
+    };
   </script>
 </html>
