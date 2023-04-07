@@ -21,11 +21,23 @@ declare enum VideoResolution {
   _480P = "480p",
   _720P = "720p",
 }
-
+export enum VideoMixinLayoutType {
+  AutoLayout = 0,
+}
+export enum VideoMixinOutputResolution {
+  _180P = "180p",
+  _360P = "360p",
+  _540P = "540p",
+  _720P = "720p",
+  _1080P = "1080p",
+}
 declare interface ScenarioConfig {
   [ScenarioModel.LiveStreaming]: {
     role: LiveRole;
     liveStreamingMode: LiveStreamingMode;
+    enableVideoMixing?: boolean;
+    videoMixingLayout?: VideoMixinLayoutType;
+    videoMixingOutputResolution: VideoMixinOutputResolution;
   };
   [ScenarioModel.OneONoneCall]: {
     role: LiveRole;
@@ -58,6 +70,12 @@ declare enum ConsoleLevel {
   Error = "Error",
   None = "None",
 }
+declare interface InRoomMessageInfo {
+  fromUser: ZegoUser;
+  message: string;
+  sendTime: number;
+  messageID: number;
+}
 declare interface ZegoCloudRoomConfig {
   // 1 UI controls
   // 1.1 Global
@@ -79,7 +97,8 @@ declare interface ZegoCloudRoomConfig {
   videoResolutionDefault?: VideoResolution; // The default video resolution.
 
   // 1.3 Room view
-  showRoomTimer: boolean; //  Whether to display the timer. Not displayed by default.
+  showRoomDetailsButton?: boolean; // Whether to display room details. Displayed by default
+  showRoomTimer?: boolean; //  Whether to display the timer. Not displayed by default.
   showMyCameraToggleButton?: boolean; // Whether to display the button for toggling my camera. Displayed by default.
   showMyMicrophoneToggleButton?: boolean; // Whether to display the button for toggling my microphone. Displayed by default.
   showAudioVideoSettingsButton?: boolean; // Whether to display the button for audio and video settings. Displayed by default.
@@ -106,6 +125,9 @@ declare interface ZegoCloudRoomConfig {
     showAddImageButton?: boolean; // It's set to false by default. To use this feature, activate the File Sharing feature, and then import the plugin. Otherwise, this prompt will occur: "Failed to add image, this feature is not supported."
     showCreateAndCloseButton?: boolean; // Whether to display the button that is used to create/turn off the whiteboard. Displayed by default.
   };
+  showMakeCohostButton?: boolean; // 主播是否展示邀请观众连麦按钮
+  showRemoveCohostButton?: boolean; // 主播是否展示移下麦按钮
+  showRequestToCohostButton?: boolean; // 观众是否展示申请连麦按钮
   // 1.4 Leaving view
   showLeavingView?: boolean; // Whether to display the leaving view. Displayed by default.
 
@@ -117,9 +139,20 @@ declare interface ZegoCloudRoomConfig {
   onUserAvatarSetter?: (user: ZegoUser[]) => void; // Callback for the user avatar can be set.
   onLiveStart?: (user: ZegoUser) => void; //  Callback for livestream starts.
   onLiveEnd?: (user: ZegoUser) => void; // Callback for livestream ends.
-  onYouRemovedFromRoom: () => void; // Callback for me removed from the room.
+  onYouRemovedFromRoom?: () => void; // Callback for me removed from the room.
+  onInRoomMessageReceived?: (messageInfo: InRoomMessageInfo) => void; // Callback for room chat message
+  onInRoomCommandReceived?: (fromUser: ZegoUser, command: string) => void; // Callback for room command message
+  onInRoomTextMessageReceived?: (
+    messages: ZegoSignalingInRoomTextMessage[]
+  ) => void; // Callback for room signaling text message
 }
-
+declare interface ZegoSignalingInRoomTextMessage {
+  messageID: string;
+  timestamp: number;
+  orderKey: number;
+  senderUserID: string;
+  text: string;
+}
 declare enum ZegoInvitationType {
   VoiceCall = 0,
   VideoCall,
@@ -249,4 +282,5 @@ export declare class ZegoUIKitPrebuilt {
   }): Promise<{
     errorInvitees: ZegoUser[];
   }>;
+  sendInRoomCommand(command: string, toUserIDs: string[]): Promise<boolean>;
 }
