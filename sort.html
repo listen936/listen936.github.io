@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Sort</title>
+		<style>
+			.wrapper {
+				margin: 50px;
+			}
+			ul {
+				display: flex;
+				/* justify-content: center; */
+				align-items: center;
+			}
+			li {
+				list-style: none;
+				margin: 0 10px;
+				width: 100px;
+				height: 100px;
+				border: 1px solid #ccc;
+				font-size: 40px;
+				text-align: center;
+			}
+			li.show {
+				background-color: bisque;
+			}
+			.listWrapper {
+				display: flex;
+			}
+			.listWrapper > div {
+				margin-right: 50px;
+			}
+
+			.orderUser {
+				margin: 2px;
+				border: 1px solid transparent;
+			}
+			.selected {
+				border: 1px solid red;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="wrapper">
+			<ul></ul>
+			<button id="prev" onclick="prevPage()">上一页</button>
+			<button id="next" onclick="nextPage()">下一页</button>
+		</div>
+		<div class="listWrapper">
+			<div>
+				<p>排好顺序用户列表</p>
+				<div class="userList"></div>
+			</div>
+			<div>
+				<p>下一个待展示的用户</p>
+				<div class="openUserList"></div>
+			</div>
+		</div>
+	</body>
+	<script>
+		let id = 0
+		function createUser(show) {
+			const seq = id + 2
+			id = seq
+			return {
+				id: seq,
+				time: seq,
+				video: show,
+			}
+		}
+		function findPrevUserIndex() {
+			const indexList = []
+			showUsers.forEach((user) => {
+				indexList.push(orderList.findIndex((item) => item.id === user.id))
+			})
+			return Math.min(...indexList)
+		}
+		function findShowUsersLastOneIndex() {
+			const indexList = []
+			showUsers.forEach((user) => {
+				indexList.push(orderList.findIndex((item) => item.id === user.id))
+			})
+			return Math.max(...indexList)
+		}
+		function renderShowUsers() {
+			const ul = document.querySelector("ul")
+			ul.innerHTML = showUsers
+				.map((user) => `<li class="user ${user.video ? "show" : ""}">${user.id}</li>`)
+				.join("")
+		}
+		function renderUserList() {
+			const userList = document.querySelector(".userList")
+			userList.innerHTML = orderList
+				.map(
+					(user) =>
+						`<div class="orderUser ${
+							showUsers.findIndex((item) => item.id === user.id) !== -1 ? "selected" : ""
+						}">id:${user.id} | time:${user.time} | video: <input type="checkbox" ${
+							user.video ? "checked" : ""
+						} value="${user.video}" onchange="changeVideo(${user.id})">
+                        <button onclick="leaveRoom(${user.id})">Leave</button>
+                        </div>`
+				)
+				.join("")
+		}
+		function renderOpenUserList() {
+			const userList = document.querySelector(".openUserList")
+			userList.innerHTML = `<div>id:${nextShowUser?.id} | time:${nextShowUser?.time} | video: ${nextShowUser?.video}</div>`
+			// 	.map(
+			// 		(user) =>
+			// 			`<div class="user">id:${user.id} | time:${user.time} | video: <input type="checkbox" ${
+			// 				user.video ? "checked" : ""
+			// 			} value="${user.video}" onchange="changeVideo(${user.id})"></div>`
+			// 	)
+			// 	.join("")
+		}
+		function renderCloseUserList() {
+			// const userList = document.querySelector(".closeUserList")
+			// userList.innerHTML = closeVideoUsers
+			// 	.map(
+			// 		(user) =>
+			// 			`<div class="user">id:${user.id} | time:${user.time} | video: <input type="checkbox" ${
+			// 				user.video ? "checked" : ""
+			// 			} value="${user.video}"></div>`
+			// 	)
+			// 	.join("")
+		}
+		function nextPage() {
+			if (!nextShowUser || showUsers.find((user) => user.id === nextShowUser?.id)) {
+				alert("没有下一页了")
+				return
+			}
+			let nextIndex = orderList.findIndex((user) => user.id === nextShowUser?.id)
+			showUsers = orderList.slice(nextIndex, nextIndex + 3)
+			nextShowUser = orderList[nextIndex + 3] || orderList[orderList.length - 1]
+			prevShowUser = orderList[findPrevUserIndex()]
+			render()
+		}
+		function prevPage() {
+			let nextIndex = orderList.findIndex((user) => user.id === prevShowUser.id)
+			if (nextIndex === 0) {
+				alert("没有上一页了")
+				return
+			}
+			showUsers = orderList.slice(nextIndex - 3, nextIndex)
+			nextShowUser = orderList[nextIndex]
+			if (showUsers.length < 3) {
+				showUsers = orderList.slice(0, 3)
+				nextShowUser = orderList[3]
+			}
+			prevShowUser = orderList[findPrevUserIndex()]
+
+			render()
+		}
+		function leaveRoom(id) {
+			const showIndex = showUsers.findIndex((user) => user.id === id)
+			const index = orderList.findIndex((user) => user.id === id)
+			const nextIndex = orderList.findIndex((user) => user.id === nextShowUser?.id)
+			if (showIndex !== -1) {
+				if (id === nextShowUser?.id) {
+					// 最后一个人离开
+					showUsers.splice(showIndex, 1)
+				} else {
+					// 需要补位
+					if (showUsers.findIndex((user) => user.id === nextShowUser?.id) === -1) {
+						showUsers.splice(showIndex, 1, nextShowUser)
+					} else {
+						showUsers.splice(showIndex, 1)
+					}
+				}
+				if (showUsers.length === 0) {
+					showUsers = orderList.slice(orderList.length - 4, orderList.length - 1)
+				}
+			} else {
+				if (index === nextIndex) {
+				}
+			}
+			// 删除用户
+			if (openVideoUsers.findIndex((user) => user.id === id) !== -1) {
+				openVideoUsers = openVideoUsers.filter((user) => user.id !== id)
+			} else {
+				closeVideoUsers = closeVideoUsers.filter((user) => user.id !== id)
+			}
+			orderList = openVideoUsers.concat(closeVideoUsers)
+			nextShowUser = orderList[findShowUsersLastOneIndex() + 1] || orderList[orderList.length - 1]
+			prevShowUser = orderList[findPrevUserIndex()]
+			render()
+		}
+		function changeVideo(id) {
+			const user = orderList.find((user) => user.id === id)
+			const isInOpenVideoUsers = showUsers.every((user) => user.video)
+			if (user.video) {
+				// 关闭摄像头
+				user.video = false
+
+				// 将用户从打开摄像头的用户列表移动到关闭摄像头的用户列表，并进行排序
+				const index = openVideoUsers.findIndex((user) => user.id === id)
+				// if (nextShowUser.id === user.id) {
+				// 	// 如果该用户是待展示的用户，那么需要更新待展示的用户
+				// 	nextShowUser = openVideoUsers[index + 1]
+				// }
+				openVideoUsers.splice(index, 1)
+				closeVideoUsers.push(user)
+				closeVideoUsers.sort((a, b) => a.time - b.time)
+				orderList = openVideoUsers.concat(closeVideoUsers)
+
+				const nextIndex = orderList.findIndex((user) => user.id === nextShowUser.id)
+				if (user.time <= orderList[findShowUsersLastOneIndex()]?.time) {
+					// 如果该用户的进房时间小于等于展示中用户中最后一个用户的进房时间，则需要更新待展示的用户
+					if (showUsers.length < 3 && user.time > prevShowUser.time) {
+						showUsers.push(user)
+					}
+				} else if (user.time < nextShowUser.time) {
+					nextShowUser = user
+				} else if (user.time === nextShowUser.time) {
+					nextShowUser = orderList[findShowUsersLastOneIndex() + 1] || orderList[orderList.length - 1]
+				}
+			} else {
+				// 打开摄像头
+				user.video = true
+
+				// 将用户从关闭摄像头的用户列表移动到打开摄像头的用户列表，并进行排序
+				const index = closeVideoUsers.findIndex((user) => user.id === id)
+				if (nextShowUser.id === user.id) {
+					// 如果该用户是待展示的用户，那么需要更新待展示的用户
+					nextShowUser = closeVideoUsers[index + 1]
+				}
+				closeVideoUsers.splice(index, 1)
+				openVideoUsers.push(user)
+				openVideoUsers.sort((a, b) => a.time - b.time)
+				orderList = openVideoUsers.concat(closeVideoUsers)
+
+				const nextIndex = orderList.findIndex((user) => user.id === nextShowUser.id)
+
+				if (user.time <= orderList[findShowUsersLastOneIndex()]?.time) {
+					// 如果该用户的进房时间小于等于展示中用户中最后一个用户的进房时间，
+					if (isInOpenVideoUsers) {
+						// 当前展示的用户处于打开摄像用户列表中
+						// 那么该用户顶替展示中的用户
+						const lastUserIndex = showUsers.findIndex((user) => user.id === orderList[nextIndex - 1].id)
+						showUsers.splice(lastUserIndex, 1, user)
+						nextShowUser = orderList[nextIndex - 1]
+					} else {
+						// 当前展示的用户处于关闭摄像用户列表中
+						if (user.time > orderList[nextIndex - 3]?.time) {
+							// 用户处于展示位置, 不需要改showUsers
+						}
+					}
+				} else if (user.time < nextShowUser.time) {
+					if (isInOpenVideoUsers) {
+						// 只需要更新nextShowUser
+						nextShowUser = user
+					} else {
+						// 那么该用户顶替展示中的用户
+						const lastUserIndex = showUsers.findIndex((user) => user.id === orderList[nextIndex - 1].id)
+						showUsers.splice(lastUserIndex, 1, user)
+						nextShowUser = orderList[nextIndex - 1]
+					}
+				} else if (user.time === nextShowUser.time) {
+					//
+					const lastUserIndex = (nextShowUser = showUsers[lastUserIndex])
+					showUsers.splice(lastUserIndex, 1, user)
+				}
+			}
+			orderList = openVideoUsers.concat(closeVideoUsers)
+			render()
+		}
+		let users = Array.from({ length: 20 }).map((_, i) => createUser(i % 2 === 0))
+		// 当前打开摄像头的用户
+		let openVideoUsers = users.filter((user) => user.video).sort((a, b) => a.time - b.time)
+		// 当前关闭摄像头的用户
+		let closeVideoUsers = users.filter((user) => !user.video).sort((a, b) => a.time - b.time)
+		// 排好序的用户
+		let orderList = openVideoUsers.concat(closeVideoUsers)
+		// 当前展示的用户
+		let showUsers = orderList.slice(0, 3)
+		let nextShowUser = orderList[3]
+		let prevShowUser = orderList[0]
+		function render() {
+			renderOpenUserList()
+			renderCloseUserList()
+			renderShowUsers()
+			renderUserList()
+		}
+		render()
+	</script>
+</html>
